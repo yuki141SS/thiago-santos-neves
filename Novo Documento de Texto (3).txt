@@ -1,0 +1,190 @@
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Provider as PaperProvider } from 'react-native-paper';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+
+import HomeScreen from './screens/HomeScreen';
+import QuizScreen from './screens/QuizScreen';
+import ResultsScreen from './screens/ResultsScreen';
+
+const Stack = createStackNavigator();
+const Tab = createBottomTabNavigator();
+
+const App = () => {
+  return (
+    <PaperProvider>
+      <NavigationContainer>
+        <Tab.Navigator>
+          <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarIcon: ({ color, size }) => (<Icon name="home" color={color} size={size} />) }} />
+          <Tab.Screen name="Quiz" component={QuizScreen} options={{ tabBarIcon: ({ color, size }) => (<Icon name="quiz" color={color} size={size} />) }} />
+          <Tab.Screen name="Results" component={ResultsScreen} options={{ tabBarIcon: ({ color, size }) => (<Icon name="show-chart" color={color} size={size} />) }} />
+        </Tab.Navigator>
+      </NavigationContainer>
+    </PaperProvider>
+  );
+};
+
+export default App;
+import React from 'react';
+import { View, Text, StyleSheet, Button } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const HomeScreen = ({ navigation }) => {
+  const clearScores = async () => {
+    await AsyncStorage.removeItem('scores');
+    alert('Pontuações apagadas!');
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Bem-vindo ao Quiz Educacional</Text>
+      <Button title="Iniciar Quiz" onPress={() => navigation.navigate('Quiz')} />
+      <Button title="Apagar Pontuações" onPress={clearScores} />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 24,
+    marginBottom: 20,
+  },
+});
+
+export default HomeScreen;
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Button, FlatList } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const questions = [
+  { question: 'Qual a cor do céu?', options: ['Azul', 'Verde', 'Amarelo'], answer: 'Azul' },
+  { question: 'Quantos dias tem uma semana?', options: ['5', '6', '7'], answer: '7' },
+  // Adicione mais perguntas aqui
+];
+
+const QuizScreen = ({ navigation }) => {
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [showScore, setShowScore] = useState(false);
+  const [score, setScore] = useState(0);
+
+  const handleAnswerButtonClick = async (answer) => {
+    if (answer === questions[currentQuestion].answer) {
+      setScore(score + 1);
+    }
+
+    const nextQuestion = currentQuestion + 1;
+    if (nextQuestion < questions.length) {
+      setCurrentQuestion(nextQuestion);
+    } else {
+      setShowScore(true);
+      const storedScores = JSON.parse(await AsyncStorage.getItem('scores')) || [];
+      storedScores.push(score + 1);
+      await AsyncStorage.setItem('scores', JSON.stringify(storedScores));
+    }
+  };
+
+  const restartQuiz = () => {
+    setCurrentQuestion(0);
+    setScore(0);
+    setShowScore(false);
+  };
+
+  return (
+    <View style={styles.container}>
+      {showScore ? (
+        <View>
+          <Text style={styles.scoreText}>Você acertou {score} de {questions.length}!</Text>
+          <Button title="Recomeçar Quiz" onPress={restartQuiz} />
+          <Button title="Ver Pontuações" onPress={() => navigation.navigate('Results')} />
+        </View>
+      ) : (
+        <View>
+          <Text style={styles.questionText}>{questions[currentQuestion].question}</Text>
+          <FlatList
+            data={questions[currentQuestion].options}
+            renderItem={({ item }) => (
+              <Button title={item} onPress={() => handleAnswerButtonClick(item)} />
+            )}
+            keyExtractor={(item, index) => index.toString()}
+          />
+        </View>
+      )}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5fcff',
+  },
+  questionText: {
+    fontSize: 20,
+    marginBottom: 20,
+  },
+  scoreText: {
+    fontSize: 24,
+    marginBottom: 20,
+  },
+});
+
+export default QuizScreen;
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const ResultsScreen = () => {
+  const [scores, setScores] = useState([]);
+
+  useEffect(() => {
+    const fetchScores = async () => {
+      const storedScores = JSON.parse(await AsyncStorage.getItem('scores')) || [];
+      setScores(storedScores);
+    };
+
+    fetchScores();
+  }, []);
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Pontuações Anteriores</Text>
+      <FlatList
+        data={scores}
+        renderItem={({ item, index }) => (
+          <Text key={index} style={styles.scoreText}>Quiz {index + 1}: {item} acertos</Text>
+        )}
+        keyExtractor={(item, index) => index.toString()}
+      />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 24,
+    marginBottom: 20,
+  },
+  scoreText: {
+    fontSize: 20,
+    marginBottom: 10,
+  },
+});
+
+export default ResultsScreen;
+
+
+
