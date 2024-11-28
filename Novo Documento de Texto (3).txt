@@ -1,190 +1,377 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Provider as PaperProvider } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+/my-app
+  /components
+    - QuestionList.js
+    - QuestionItem.js
+    - Leaderboard.js
+    - Auth.js
+    - Settings.js
+    - StudyMode.js
+  /screens
+    - HomeScreen.js
+    - QuizScreen.js
+    - LeaderboardScreen.js
+    - StudyModeScreen.js
+    - ReportScreen.js
+    - CreateQuestionScreen.js
+  /firebase
+    - firebaseConfig.js
+  - App.js
+// /firebase/firebaseConfig.js
+import firebase from 'firebase/app';
+import 'firebase/auth';
+import 'firebase/database';
+import 'firebase/messaging';
 
-import HomeScreen from './screens/HomeScreen';
-import QuizScreen from './screens/QuizScreen';
-import ResultsScreen from './screens/ResultsScreen';
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
 
-const Stack = createStackNavigator();
-const Tab = createBottomTabNavigator();
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
 
-const App = () => {
+export { firebase };
+// /components/Auth.js
+import React, { useState } from 'react';
+import { View, TextInput, Button, Alert } from 'react-native';
+import { firebase } from '../firebase/firebaseConfig';
+
+const Auth = ({ onAuthSuccess }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleLogin = async () => {
+    try {
+      await firebase.auth().signInWithEmailAndPassword(email, password);
+      onAuthSuccess();
+    } catch (error) {
+      Alert.alert('Erro', error.message);
+    }
+  };
+
+  const handleRegister = async () => {
+    try {
+      await firebase.auth().createUser WithEmailAndPassword(email, password);
+      onAuthSuccess();
+    } catch (error) {
+      Alert.alert('Erro', error.message);
+    }
+  };
+
   return (
-    <PaperProvider>
-      <NavigationContainer>
-        <Tab.Navigator>
-          <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarIcon: ({ color, size }) => (<Icon name="home" color={color} size={size} />) }} />
-          <Tab.Screen name="Quiz" component={QuizScreen} options={{ tabBarIcon: ({ color, size }) => (<Icon name="quiz" color={color} size={size} />) }} />
-          <Tab.Screen name="Results" component={ResultsScreen} options={{ tabBarIcon: ({ color, size }) => (<Icon name="show-chart" color={color} size={size} />) }} />
-        </Tab.Navigator>
-      </NavigationContainer>
-    </PaperProvider>
+    <View>
+      <TextInput placeholder="Email" value={email} onChangeText={setEmail} />
+      <TextInput placeholder="Senha" secureTextEntry value={password} onChangeText={setPassword} />
+      <Button title="Login" onPress={handleLogin} />
+      <Button title="Registrar" onPress={handleRegister} />
+    </View>
   );
 };
 
-export default App;
+export default Auth;
+// /screens/HomeScreen.js
 import React from 'react';
-import { View, Text, StyleSheet, Button } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, Button } from 'react-native';
 
 const HomeScreen = ({ navigation }) => {
-  const clearScores = async () => {
-    await AsyncStorage.removeItem('scores');
-    alert('Pontuações apagadas!');
-  };
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Bem-vindo ao Quiz Educacional</Text>
+    <View>
       <Button title="Iniciar Quiz" onPress={() => navigation.navigate('Quiz')} />
-      <Button title="Apagar Pontuações" onPress={clearScores} />
+      <Button title="Ranking" onPress={() => navigation.navigate('Leaderboard')} />
+      <Button title="Modo de Estudo" onPress={() => navigation.navigate ('StudyMode')} />
+      <Button title="Relatórios" onPress={() => navigation.navigate('Report')} />
+      <Button title="Criar Pergunta" onPress={() => navigation.navigate('CreateQuestion')} />
+      <Button title="Configurações" onPress={() => navigation.navigate('Settings')} />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    marginBottom: 20,
-  },
-});
 
 export default HomeScreen;
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Button, FlatList } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// /screens/HomeScreen.js
+import React from 'react';
+import { View, Button } from 'react-native';
 
-const questions = [
-  { question: 'Qual a cor do céu?', options: ['Azul', 'Verde', 'Amarelo'], answer: 'Azul' },
-  { question: 'Quantos dias tem uma semana?', options: ['5', '6', '7'], answer: '7' },
-  // Adicione mais perguntas aqui
-];
-
-const QuizScreen = ({ navigation }) => {
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [showScore, setShowScore] = useState(false);
-  const [score, setScore] = useState(0);
-
-  const handleAnswerButtonClick = async (answer) => {
-    if (answer === questions[currentQuestion].answer) {
-      setScore(score + 1);
-    }
-
-    const nextQuestion = currentQuestion + 1;
-    if (nextQuestion < questions.length) {
-      setCurrentQuestion(nextQuestion);
-    } else {
-      setShowScore(true);
-      const storedScores = JSON.parse(await AsyncStorage.getItem('scores')) || [];
-      storedScores.push(score + 1);
-      await AsyncStorage.setItem('scores', JSON.stringify(storedScores));
-    }
-  };
-
-  const restartQuiz = () => {
-    setCurrentQuestion(0);
-    setScore(0);
-    setShowScore(false);
-  };
-
+const HomeScreen = ({ navigation }) => {
   return (
-    <View style={styles.container}>
-      {showScore ? (
-        <View>
-          <Text style={styles.scoreText}>Você acertou {score} de {questions.length}!</Text>
-          <Button title="Recomeçar Quiz" onPress={restartQuiz} />
-          <Button title="Ver Pontuações" onPress={() => navigation.navigate('Results')} />
-        </View>
-      ) : (
-        <View>
-          <Text style={styles.questionText}>{questions[currentQuestion].question}</Text>
-          <FlatList
-            data={questions[currentQuestion].options}
-            renderItem={({ item }) => (
-              <Button title={item} onPress={() => handleAnswerButtonClick(item)} />
-            )}
-            keyExtractor={(item, index) => index.toString()}
-          />
-        </View>
-      )}
+    <View>
+      <Button title="Iniciar Quiz" onPress={() => navigation.navigate('Quiz')} />
+      <Button title="Ranking" onPress={() => navigation.navigate('Leaderboard')} />
+      <Button title="Modo de Estudo" onPress={() => navigation.navigate ('StudyMode')} />
+      <Button title="Relatórios" onPress={() => navigation.navigate('Report')} />
+      <Button title="Criar Pergunta" onPress={() => navigation.navigate('CreateQuestion')} />
+      <Button title="Configurações" onPress={() => navigation.navigate('Settings')} />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5fcff',
-  },
-  questionText: {
-    fontSize: 20,
-    marginBottom: 20,
-  },
-  scoreText: {
-    fontSize: 24,
-    marginBottom: 20,
-  },
-});
-
-export default QuizScreen;
+export default HomeScreen;
+// /screens/QuizScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, Text, Button, FlatList, Alert } from 'react-native';
+import { firebase } from '../firebase/firebaseConfig';
 
-const ResultsScreen = () => {
-  const [scores, setScores] = useState([]);
+const QuizScreen = () => {
+  const [questions, setQuestions] = useState([]);
+  const [score, setScore] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
   useEffect(() => {
-    const fetchScores = async () => {
-      const storedScores = JSON.parse(await AsyncStorage.getItem('scores')) || [];
-      setScores(storedScores);
+    const fetchQuestions = async () => {
+      const response = await firebase.database().ref('/questions').once('value');
+      const data = response.val();
+      setQuestions(data);
     };
 
-    fetchScores();
+    fetchQuestions();
   }, []);
 
+  const handleAnswer = (isCorrect) => {
+    if (isCorrect) {
+      setScore(score + 1);
+    }
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else {
+      Alert.alert('Quiz Concluído', `Sua pontuação: ${score + (isCorrect ? 1 : 0)}`);
+      // Reset the quiz or navigate to outro screen
+    }
+  };
+
+  if (questions.length === 0) {
+    return <Text>Carregando perguntas...</Text>;
+  }
+
+  const currentQuestion = questions[currentQuestionIndex];
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Pontuações Anteriores</Text>
+    <View>
+      <Text>{currentQuestion.question}</Text>
       <FlatList
-        data={scores}
-        renderItem={({ item, index }) => (
-          <Text key={index} style={styles.scoreText}>Quiz {index + 1}: {item} acertos</Text>
+        data={currentQuestion.answers}
+        renderItem={({ item }) => (
+          <Button title={item.text} onPress={() => handleAnswer(item.isCorrect)} />
         )}
-        keyExtractor={(item, index) => index.toString()}
+        keyExtractor={(item) => item.id}
       />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    marginBottom: 20,
-  },
-  scoreText: {
-    fontSize: 20,
-    marginBottom: 10,
-  },
-});
+export default QuizScreen;
+// /screens/LeaderboardScreen.js
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList } from 'react-native';
+import { firebase } from '../firebase/firebaseConfig';
 
-export default ResultsScreen;
+const LeaderboardScreen = () => {
+  const [leaderboard, setLeaderboard] = useState([]);
 
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      const response = await firebase.database().ref('/leaderboard').once('value');
+      const data = response.val();
+      setLeaderboard(data);
+    };
 
+    fetchLeaderboard();
+  }, []);
 
+  return (
+    <View>
+      <Text>Ranking de Alunos</Text>
+      <FlatList
+        data={leaderboard}
+        renderItem={({ item }) => (
+          <Text>{item.name}: {item.score}</Text>
+        )}
+        keyExtractor={(item) => item.id}
+      />
+    </View>
+  );
+};
+
+export default LeaderboardScreen;
+// /screens/StudyModeScreen.js
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList } from 'react-native';
+import { firebase } from '../firebase/firebaseConfig';
+
+const StudyModeScreen = () => {
+  const [questions, setQuestions] = useState([]);
+
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      const response = await firebase.database().ref('/questions').once('value');
+      const data = response.val();
+      setQuestions(data);
+    };
+
+    fetchQuestions();
+  }, []);
+
+  return (
+    <View>
+      <Text>Modo de Estudo</Text>
+      <FlatList
+        data={questions}
+        renderItem={({ item }) => (
+          <View>
+            <Text>{item.question}</Text>
+            <Text>Dica: {item.tip}</Text>
+          </View>
+        )}
+        keyExtractor={(item) => item.id}
+      />
+    </View>
+  );
+};
+
+export default StudyModeScreen;
+// /screens/ReportScreen.js
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList } from 'react-native';
+import { firebase } from '../firebase/firebaseConfig';
+
+const ReportScreen = () => {
+  const [reports, setReports] = useState([]);
+
+  useEffect(() => {
+    const fetchReports = async () => {
+      const response = await firebase.database().ref('/ reports').once('value');
+      const data = response.val();
+      setReports(data);
+    };
+
+    fetchReports();
+  }, []);
+
+  return (
+    <View>
+      <Text>Relatórios de Desempenho</Text>
+      <FlatList
+        data={reports}
+        renderItem={({ item }) => (
+          <View>
+            <Text>Aluno: {item.studentName}</Text>
+            <Text>Pontuação: {item.score}</Text>
+            <Text>Data: {item.date}</Text>
+          </View>
+        )}
+        keyExtractor={(item) => item.id}
+      />
+    </View>
+  );
+};
+
+export default ReportScreen;
+// /screens/CreateQuestionScreen.js
+import React, { useState } from 'react';
+import { View, TextInput, Button, Alert } from 'react-native';
+import { firebase } from '../firebase/firebaseConfig';
+
+const CreateQuestionScreen = () => {
+  const [question, setQuestion] = useState('');
+  const [answers, setAnswers] = useState([{ text: '', isCorrect: false }]);
+
+  const handleAddAnswer = () => {
+    setAnswers([...answers, { text: '', isCorrect: false }]);
+  };
+
+  const handleSubmit = async () => {
+    try {
+      await firebase.database().ref('/questions').push({
+        question,
+        answers,
+      });
+      Alert.alert('Sucesso', 'Pergunta criada com sucesso!');
+      setQuestion('');
+      setAnswers([{ text: '', isCorrect: false }]);
+    } catch (error) {
+      Alert.alert('Erro', error.message);
+    }
+  };
+
+  return (
+    <View>
+      <TextInput
+        placeholder="Digite a pergunta"
+        value={question}
+        onChangeText={setQuestion}
+      />
+      {answers.map((answer, index) => (
+        <TextInput
+          key={index}
+          placeholder={`Resposta ${index + 1}`}
+          value={answer.text}
+          onChangeText={(text) => {
+            const newAnswers = [...answers];
+            newAnswers[index].text = text;
+            setAnswers(newAnswers);
+          }}
+        />
+      ))}
+      <Button title="Adicionar Resposta" onPress={handleAddAnswer} />
+      <Button title="Criar Pergunta" onPress={handleSubmit} />
+    </View>
+  );
+};
+
+export default CreateQuestionScreen;
+// /screens/SettingsScreen.js
+import React from 'react';
+import { View, Text, Button } from 'react-native';
+
+const SettingsScreen = () => {
+  const handleLogout = () => {
+    // Implementar lógica de logout
+  };
+
+  return (
+    <View>
+      <Text>Configurações</Text>
+      <Button title="Sair" onPress={handleLogout} />
+      {/* Adicionar mais opções de configuração aqui */}
+    </View>
+  );
+};
+
+export default SettingsScreen;
+// App.js
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import HomeScreen from './screens/HomeScreen';
+import QuizScreen from './screens/QuizScreen';
+import LeaderboardScreen from './screens/LeaderboardScreen';
+import StudyModeScreen from './screens/StudyModeScreen';
+import ReportScreen from './screens/ReportScreen';
+import CreateQuestionScreen from './screens/CreateQuestionScreen';
+import Auth from './components/Auth';
+import SettingsScreen from './screens/SettingsScreen';
+
+const Stack = createStackNavigator();
+
+const App = () => {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Auth">
+        <Stack.Screen name="Auth" component={Auth} />
+        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Quiz" component={QuizScreen} />
+        <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+        <Stack.Screen name="StudyMode" component={StudyModeScreen} />
+        <Stack.Screen name="Report" component={ReportScreen} />
+        <Stack.Screen name="CreateQuestion" component={CreateQuestionScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
+
+export default App;
