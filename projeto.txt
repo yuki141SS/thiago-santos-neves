@@ -1,4 +1,3 @@
-Aplicativo:
 instalar o Node.js e criar o projeto React Native:
 npx react-native init AppEscolaRaioDeSol
 
@@ -174,5 +173,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 20 },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
 });
+
 
 
